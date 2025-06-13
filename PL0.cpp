@@ -443,7 +443,7 @@ void MainWindow::CONDITION(SYMSET FSYS,int LEV,int &TX) {
 } /*CONDITION*/
 //---------------------------------------------------------------------------
 void MainWindow::STATEMENT(SYMSET FSYS,int LEV,int &TX) {   /*STATEMENT*/
-    int i,CX1,CX2,CX3,goto_false_cx,goto_next_cx;
+    int i,CX1,CX2,CX3,goto_false_cx,goto_next_cx,goto_done_cx;
     switch (SYM) {
     case IDENT:
         i=POSITION(ID,TX);
@@ -551,9 +551,47 @@ void MainWindow::STATEMENT(SYMSET FSYS,int LEV,int &TX) {   /*STATEMENT*/
         break;
     case FORSYM:
         GetSym();
-        break;
-    case TOSYM:
+        if (SYM != IDENT) {
+            Error(35);
+            break;
+        }
+        i = POSITION(ID,TX);
+        if (i == 0) {
+            Error(11);
+            break;
+        }
         GetSym();
+        if (SYM != BECOMES) {
+            Error(13);
+        }
+        else {
+            GetSym();
+        }
+        EXPRESSION(SymSetUnion(SymSetNew(TOSYM),FSYS),LEV,TX);
+        GEN(STO, LEV - TABLE[i].vp.LEVEL, TABLE[i].vp.ADR);
+        if (SYM != TOSYM) {
+            Error(18);
+        } else {
+            GetSym();
+        }
+        goto_next_cx = CX;
+        EXPRESSION(SymSetUnion(SymSetNew(DOSYM),FSYS),LEV,TX);
+        GEN(LOD, LEV - TABLE[i].vp.LEVEL, TABLE[i].vp.ADR);
+        GEN(OPR, 0, 11);
+        goto_done_cx = CX;
+        GEN(JPC, 0, 0);
+        if (SYM != DOSYM) {
+            Error(18);
+        } else {
+            GetSym();
+        }
+        STATEMENT(FSYS, LEV, TX);
+        GEN(LOD, LEV - TABLE[i].vp.LEVEL, TABLE[i].vp.ADR);
+        GEN(LIT, 0, 1);
+        GEN(OPR, 0, 2);
+        GEN(STO, LEV - TABLE[i].vp.LEVEL, TABLE[i].vp.ADR);
+        GEN(JMP, 0, goto_next_cx);
+        CODE[goto_done_cx].A = CX;
         break;
     case CHARSYM:
         GetSym();
