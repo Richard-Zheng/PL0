@@ -21,7 +21,8 @@ const int SYMNUM = 33;  // SYM个数
 
 typedef enum {
     NUL,IDENT,NUMBER,PLUS,MINUS,TIMES,SLASH,EQL,NEQ,LSS,LEQ,GTR,GEQ,LPAREN,RPAREN,COMMA,SEMICOLON,PERIOD,BECOMES,
-    BEGINSYM,CALLSYM,CHARSYM,CONSTSYM,DOSYM,ELSESYM,ENDSYM,FLOATSYM,FORSYM,IFSYM,ODDSYM,PROCSYM,PROGSYM,READSYM,THENSYM,TOSYM,VARSYM,WHILESYM,WRITESYM
+    BEGINSYM,CALLSYM,CHARSYM,CONSTSYM,DOSYM,ELSESYM,ENDSYM,FLOATSYM,FORSYM,IFSYM,ODDSYM,PROCSYM,PROGSYM,READSYM,THENSYM,TOSYM,VARSYM,WHILESYM,WRITESYM,
+    DIVEQ,INC,DEC,MULEQ
 } SYMBOL;
 
 //typedef  int *SYMSET; // SET OF SYMBOL;
@@ -231,6 +232,55 @@ void MainWindow::GetSym() {
     else if (CH=='!') {
         GetCh();
         if (CH=='=') { SYM=NEQ; GetCh(); } else SYM=NUL;
+    }
+    else if (CH=='+') {
+        GetCh();
+        if (CH=='+') {
+            SYM=INC;
+            GetCh();
+        } else {
+            SYM=PLUS;
+        }
+    }
+    else if (CH=='-') {
+        GetCh();
+        if (CH=='-') {
+            SYM=DEC;
+            GetCh();
+        } else {
+            SYM=MINUS;
+        }
+    }
+    else if (CH=='*') {
+        GetCh();
+        if (CH=='=') {
+            SYM=MULEQ;
+            GetCh();
+        } else {
+            SYM=TIMES;
+        }
+    }
+    else if (CH=='/') {
+        GetCh();
+        if (CH=='=') {
+            SYM=DIVEQ;
+            GetCh();
+        } else if (CH=='/') {
+            CC=LL;
+            GetCh();
+            GetSym();
+        } else if (CH=='*') {
+            while (1) {
+                GetCh();
+                if (CH=='*') {
+                    GetCh();
+                    if (CH=='/') { GetCh(); break; }
+                }
+            }
+            GetSym();
+        } else {
+            SYM=SLASH;
+        }
     }
     else { SYM=SSYM[CH]; GetCh(); }
 } /*GetSym()*/
