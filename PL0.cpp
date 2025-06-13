@@ -48,7 +48,7 @@ ALFA   ID;  /*LAST IDENTIFIER READ*/
 int    NUM; /*LAST NUMBER READ*/
 int    CC;  /*CHARACTER COUNT*/
 int    LL;  /*LINE LENGTH*/
-int    CX;  /*CODE ALLOCATION INDEX*/
+int    CX;  /*Generated P-CODE SIZE*/
 char   LINE[81];
 INSTRUCTION  CODE[CXMAX];
 ALFA    KWORD[NORW+1];
@@ -443,7 +443,7 @@ void MainWindow::CONDITION(SYMSET FSYS,int LEV,int &TX) {
 } /*CONDITION*/
 //---------------------------------------------------------------------------
 void MainWindow::STATEMENT(SYMSET FSYS,int LEV,int &TX) {   /*STATEMENT*/
-    int i,CX1,CX2,CX3;
+    int i,CX1,CX2,CX3,goto_false_cx,goto_next_cx;
     switch (SYM) {
     case IDENT:
         i=POSITION(ID,TX);
@@ -508,10 +508,26 @@ void MainWindow::STATEMENT(SYMSET FSYS,int LEV,int &TX) {   /*STATEMENT*/
     case IFSYM:
         GetSym();
         CONDITION(SymSetUnion(SymSetNew(THENSYM,DOSYM),FSYS),LEV,TX);
-        if (SYM==THENSYM) GetSym();
-        else Error(16);
-        CX1=CX;  GEN(JPC,0,0);
-        STATEMENT(FSYS,LEV,TX);  CODE[CX1].A=CX;
+        if (SYM == THENSYM) {
+            GetSym();
+        }
+        else {
+            Error(16);
+        }
+        goto_false_cx = CX;
+        GEN(JPC, 0, 0);
+
+        STATEMENT(SymSetUnion(SymSetNew(ELSESYM), FSYS), LEV, TX);
+        goto_next_cx = CX;
+        GEN(JMP, 0, 0);
+
+        CODE[goto_false_cx].A = CX;
+
+        if (SYM==ELSESYM) {
+            GetSym();
+            STATEMENT(FSYS, LEV, TX);
+        }
+        CODE[goto_next_cx].A = CX;
         break;
     case BEGINSYM:
         GetSym();
@@ -532,9 +548,6 @@ void MainWindow::STATEMENT(SYMSET FSYS,int LEV,int &TX) {   /*STATEMENT*/
         STATEMENT(FSYS,LEV,TX);
         GEN(JMP,0,CX1);
         CODE[CX2].A=CX;
-        break;
-    case ELSESYM:
-        GetSym();
         break;
     case FORSYM:
         GetSym();
