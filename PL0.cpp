@@ -10,7 +10,7 @@ using namespace std;
 
 //---------------------------------------------------------------------------
 const  int AL    =  10;  /* LENGTH OF IDENTIFIERS */
-const  int NORW  =  14;  /* # OF RESERVED WORDS */  // 关键字个数
+const  int NORW  =  19;  /* # OF RESERVED WORDS */
 const  int TXMAX = 100;  /* LENGTH OF IDENTIFIER TABLE */
 const  int NMAX  =  14;  /* MAX NUMBER OF DEGITS IN NUMBERS */
 const  int AMAX  =2047;  /* MAXIMUM ADDRESS */
@@ -19,16 +19,10 @@ const  int CXMAX = 200;  /* SIZE OF CODE ARRAY */
 
 const int SYMNUM = 33;  // SYM个数
 
-typedef enum  { NUL, IDENT, NUMBER, PLUS, MINUS, TIMES,
-               SLASH, ODDSYM, EQL, NEQ, LSS, LEQ, GTR, GEQ,
-               LPAREN, RPAREN, COMMA, SEMICOLON, PERIOD,
-               BECOMES, BEGINSYM, ENDSYM, IFSYM, THENSYM,
-               WHILESYM, WRITESYM, READSYM, DOSYM, CALLSYM,
-               CONSTSYM, VARSYM, PROCSYM, PROGSYM
-
-
+typedef enum {
+    NUL,IDENT,NUMBER,PLUS,MINUS,TIMES,SLASH,EQL,NEQ,LSS,LEQ,GTR,GEQ,LPAREN,RPAREN,COMMA,SEMICOLON,PERIOD,BECOMES,
+    BEGINSYM,CALLSYM,CHARSYM,CONSTSYM,DOSYM,ELSESYM,ENDSYM,FLOATSYM,FORSYM,IFSYM,ODDSYM,PROCSYM,PROGSYM,READSYM,THENSYM,TOSYM,VARSYM,WHILESYM,WRITESYM
 } SYMBOL;
-
 
 //typedef  int *SYMSET; // SET OF SYMBOL;
 //typedef  char ALFA[11];
@@ -210,37 +204,35 @@ void MainWindow::GetSym() {
         if (i-1 > J) SYM=WSYM[K];
         else SYM=IDENT;
     }
-    else
-        if (CH>='0' && CH<='9') { /*NUMBER*/
-            K=0; NUM=0; SYM=NUMBER;
-            do {
-                NUM=10*NUM+(CH-'0');
-                K++; GetCh();
-            }while(CH>='0' && CH<='9');
-            if (K>NMAX) Error(30);
-        }
-        else
-            if (CH==':') {
-                GetCh();
-                if (CH=='=') { SYM=BECOMES; GetCh(); }
-                else SYM=NUL;
-            }
-            else /* THE FOLLOWING TWO CHECK WERE ADDED
+    else if (CH>='0' && CH<='9') { /*NUMBER*/
+        K=0; NUM=0; SYM=NUMBER;
+        do {
+            NUM=10*NUM+(CH-'0');
+            K++; GetCh();
+        }while(CH>='0' && CH<='9');
+        if (K>NMAX) Error(30);
+    }
+    else if (CH==':') {
+        GetCh();
+        if (CH=='=') { SYM=BECOMES; GetCh(); }
+        else SYM=NUL;
+    }
+    /* THE FOLLOWING TWO CHECK WERE ADDED
              BECAUSE ASCII DOES NOT HAVE A SINGLE CHARACTER FOR <= OR >= */
-                if (CH=='<') {
-                    GetCh();
-                    if (CH=='=') { SYM=LEQ; GetCh(); }
-                    else SYM=LSS;
-                }
-                else
-                    if (CH=='>') {
-                        GetCh();
-                        if (CH=='=') { SYM=GEQ; GetCh(); }
-                        else SYM=GTR;
-                    }
-
-
-                    else { SYM=SSYM[CH]; GetCh(); }
+    else if (CH=='<') {
+        GetCh();
+        if (CH=='=') { SYM=LEQ; GetCh(); }
+        else SYM=LSS;
+    }
+    else if (CH=='>') {
+        GetCh();
+        if (CH=='=') { SYM=GEQ; GetCh(); } else SYM=GTR;
+    }
+    else if (CH=='!') {
+        GetCh();
+        if (CH=='=') { SYM=NEQ; GetCh(); } else SYM=NUL;
+    }
+    else { SYM=SSYM[CH]; GetCh(); }
 } /*GetSym()*/
 //---------------------------------------------------------------------------
 void MainWindow::GEN(FCT X, int Y, int Z) {
@@ -491,6 +483,21 @@ void MainWindow::STATEMENT(SYMSET FSYS,int LEV,int &TX) {   /*STATEMENT*/
         GEN(JMP,0,CX1);
         CODE[CX2].A=CX;
         break;
+    case ELSESYM:
+        GetSym();
+        break;
+    case FORSYM:
+        GetSym();
+        break;
+    case TOSYM:
+        GetSym();
+        break;
+    case CHARSYM:
+        GetSym();
+        break;
+    case FLOATSYM:
+        GetSym();
+        break;
     }
     TEST(FSYS,SymSetNULL(),19);
 } /*STATEMENT*/
@@ -615,25 +622,49 @@ void MainWindow::Interpret() {
 
 void MainWindow::runClicked(){
     for (CH=' '; CH<='^'; CH++) SSYM[CH]=NUL;
-    strcpy(KWORD[ 1],"BEGIN");    strcpy(KWORD[ 2],"CALL");
-    strcpy(KWORD[ 3],"CONST");    strcpy(KWORD[ 4],"DO");
-    strcpy(KWORD[ 5],"END");      strcpy(KWORD[ 6],"IF");
-    strcpy(KWORD[ 7],"ODD");      strcpy(KWORD[ 8],"PROCEDURE");
-    strcpy(KWORD[ 9],"PROGRAM");  strcpy(KWORD[10],"READ");
-    strcpy(KWORD[11],"THEN");     strcpy(KWORD[12],"VAR");
-    strcpy(KWORD[13],"WHILE");    strcpy(KWORD[14],"WRITE");
-    WSYM[ 1]=BEGINSYM;   WSYM[ 2]=CALLSYM;
-    WSYM[ 3]=CONSTSYM;   WSYM[ 4]=DOSYM;
-    WSYM[ 5]=ENDSYM;     WSYM[ 6]=IFSYM;
-    WSYM[ 7]=ODDSYM;     WSYM[ 8]=PROCSYM;
-    WSYM[ 9]=PROGSYM;    WSYM[10]=READSYM;
-    WSYM[11]=THENSYM;    WSYM[12]=VARSYM;
-    WSYM[13]=WHILESYM;   WSYM[14]=WRITESYM;
+    strcpy(KWORD[1],"BEGIN");
+    strcpy(KWORD[2],"CALL");
+    strcpy(KWORD[3],"CHAR");
+    strcpy(KWORD[4],"CONST");
+    strcpy(KWORD[5],"DO");
+    strcpy(KWORD[6],"ELSE");
+    strcpy(KWORD[7],"END");
+    strcpy(KWORD[8],"FLOAT");
+    strcpy(KWORD[9],"FOR");
+    strcpy(KWORD[10],"IF");
+    strcpy(KWORD[11],"ODD");
+    strcpy(KWORD[12],"PROCEDURE");
+    strcpy(KWORD[13],"PROGRAM");
+    strcpy(KWORD[14],"READ");
+    strcpy(KWORD[15],"THEN");
+    strcpy(KWORD[16],"TO");
+    strcpy(KWORD[17],"VAR");
+    strcpy(KWORD[18],"WHILE");
+    strcpy(KWORD[19],"WRITE");
+    WSYM[1]=BEGINSYM;
+    WSYM[2]=CALLSYM;
+    WSYM[3]=CHARSYM;
+    WSYM[4]=CONSTSYM;
+    WSYM[5]=DOSYM;
+    WSYM[6]=ELSESYM;
+    WSYM[7]=ENDSYM;
+    WSYM[8]=FLOATSYM;
+    WSYM[9]=FORSYM;
+    WSYM[10]=IFSYM;
+    WSYM[11]=ODDSYM;
+    WSYM[12]=PROCSYM;
+    WSYM[13]=PROGSYM;
+    WSYM[14]=READSYM;
+    WSYM[15]=THENSYM;
+    WSYM[16]=TOSYM;
+    WSYM[17]=VARSYM;
+    WSYM[18]=WHILESYM;
+    WSYM[19]=WRITESYM;
     SSYM['+']=PLUS;      SSYM['-']=MINUS;
     SSYM['*']=TIMES;     SSYM['/']=SLASH;
     SSYM['(']=LPAREN;    SSYM[')']=RPAREN;
     SSYM['=']=EQL;       SSYM[',']=COMMA;
-    SSYM['.']=PERIOD;    SSYM['#']=NEQ;
+    SSYM['.']=PERIOD;
     SSYM[';']=SEMICOLON;
 
     strcpy(MNEMONIC[LIT],"LIT");   strcpy(MNEMONIC[OPR],"OPR");
@@ -647,15 +678,21 @@ void MainWindow::runClicked(){
     for(int j=0; j<SYMNUM; j++) {
         DECLBEGSYS[j]=0;  STATBEGSYS[j]=0;  FACBEGSYS[j] =0;
     }
+    // Declare Begin Symbol
     DECLBEGSYS[CONSTSYM]=1;
     DECLBEGSYS[VARSYM]=1;
     DECLBEGSYS[PROCSYM]=1;
+    DECLBEGSYS[CHARSYM]=1;
+    DECLBEGSYS[FLOATSYM]=1;
+    // Statment Begin Symbol
     STATBEGSYS[BEGINSYM]=1;
     STATBEGSYS[CALLSYM]=1;
     STATBEGSYS[IFSYM]=1;
     STATBEGSYS[WHILESYM]=1;
     STATBEGSYS[WRITESYM]=1;
-    FACBEGSYS[IDENT] =1;
+    STATBEGSYS[FORSYM]=1;
+    // Factor Begin Symbol
+    FACBEGSYS[IDENT]=1;
     FACBEGSYS[NUMBER]=1;
     FACBEGSYS[LPAREN]=1;
 
